@@ -28,8 +28,6 @@ DLLEXPORT void NativeViewCoreCreateNativeView(uint32_t native_view,
 
 DLLEXPORT void NativeViewCoreDisposeNativeView(uint32_t native_view);
 
-DLLEXPORT void NativeViewCoreSetHitTestBehavior(uint32_t hittest_behavior);
-
 DLLEXPORT void NativeViewCoreResizeNativeView(uint32_t native_view,
                                               uint32_t left, uint32_t top,
                                               uint32_t right, uint32_t bottom);

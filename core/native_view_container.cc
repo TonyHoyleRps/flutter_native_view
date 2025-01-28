@@ -30,7 +30,7 @@ HWND NativeViewContainer::Create() {
   window_class.hbrBackground = ::CreateSolidBrush(0);
   ::RegisterClassExW(&window_class);
   handle_ =
-      ::CreateWindow(kClassName, kWindowName, WS_OVERLAPPEDWINDOW,
+      ::CreateWindowEx(WS_EX_TOOLWINDOW, kClassName, kWindowName, WS_OVERLAPPEDWINDOW,
                      CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
                      nullptr, nullptr, GetModuleHandle(nullptr), nullptr);
   // Disable DWM animations on |native_view_container|.
@@ -47,16 +47,6 @@ HWND NativeViewContainer::Get(HWND window) {
   ::SetWindowPos(handle_, window, window_rect.left, window_rect.top,
                  window_rect.right - window_rect.left,
                  window_rect.bottom - window_rect.top, SWP_NOACTIVATE);
-  ::SetWindowLongPtr(handle_, GWLP_USERDATA, reinterpret_cast<LONG>(window));
-  // Remove taskbar entry.
-  // Using |ITaskbarList3| available on Windows 7 or higher. Modification to
-  // |native_view_container|'s |GWL_STYLE| OR |GWL_EX_STYLE| made underlying
-  // |HWND| obvious to user.
-  ITaskbarList3* taskbar = nullptr;
-  ::CoCreateInstance(CLSID_TaskbarList, 0, CLSCTX_INPROC_SERVER,
-                     IID_PPV_ARGS(&taskbar));
-  taskbar->DeleteTab(handle_);
-  taskbar->Release();
   ::ShowWindow(handle_, SW_SHOWNOACTIVATE);
   ::SetFocus(window);
   return handle_;
@@ -71,36 +61,13 @@ LRESULT CALLBACK NativeViewContainer::WindowProc(HWND const window,
       ::PostQuitMessage(0);
       return 0;
     }
-    case WM_MOUSEMOVE: {
-      TRACKMOUSEEVENT event;
-      event.cbSize = sizeof(event);
-      event.hwndTrack = window;
-      event.dwFlags = TME_HOVER;
-      event.dwHoverTime = 200;
-      NativeViewCore::GetInstance()->SetHitTestBehavior(0);
-      auto user_data = ::GetWindowLongPtr(window, GWLP_USERDATA);
-      if (user_data) {
-        ::SetForegroundWindow(reinterpret_cast<HWND>(user_data));
-      }
-      break;
-    }
+            
     case WM_ERASEBKGND: {
       // Prevent erasing of |window| when it is unfocused and minimized or
       // moved out of screen etc.
       return 1;
     }
-    case WM_SIZE:
-    case WM_MOVE:
-    case WM_MOVING:
-    case WM_ACTIVATE:
-    case WM_WINDOWPOSCHANGED: {
-      NativeViewCore::GetInstance()->SetHitTestBehavior(0);
-      auto user_data = ::GetWindowLongPtr(window, GWLP_USERDATA);
-      if (user_data) {
-        ::SetForegroundWindow(reinterpret_cast<HWND>(user_data));
-      }
-      break;
-    }
+
     default:
       break;
   }

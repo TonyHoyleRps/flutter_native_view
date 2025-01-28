@@ -14,7 +14,6 @@ abstract class FFI {
   static late final void Function(int, int, int, int, int, double)
       nativeViewCoreCreateNativeView;
   static late final void Function(int) nativeViewCoreDisposeNativeView;
-  static late final void Function(int) nativeViewCoreSetHitTestBehavior;
   static late final void Function(int, int, int, int, int)
       nativeViewCoreResizeNativeView;
 
@@ -35,9 +34,6 @@ abstract class FFI {
     nativeViewCoreDisposeNativeView =
         library.lookupFunction<Void Function(Uint32), void Function(int)>(
             'NativeViewCoreDisposeNativeView');
-    nativeViewCoreSetHitTestBehavior =
-        library.lookupFunction<Void Function(Uint32), void Function(int)>(
-            'NativeViewCoreSetHitTestBehavior');
     nativeViewCoreResizeNativeView = library.lookupFunction<
         Void Function(Uint32, Uint32, Uint32, Uint32, Uint32),
         void Function(

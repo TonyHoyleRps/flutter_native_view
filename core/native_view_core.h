@@ -44,11 +44,12 @@ class NativeViewCore {
 
   void DisposeNativeView(HWND native_view);
 
-  void SetHitTestBehavior(int32_t hittest_behavior);
-
   void ResizeNativeView(HWND native_view, RECT rect);
 
   std::optional<HRESULT> WindowProc(HWND hwnd, UINT message, WPARAM wparam,
+                                    LPARAM lparam);
+
+  LRESULT WindowProc2(HWND hwnd, UINT message, WPARAM wparam,
                                     LPARAM lparam);
 
   ~NativeViewCore();

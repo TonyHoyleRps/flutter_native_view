@@ -87,32 +87,13 @@ class _NativeViewState extends State<NativeView>
     return _NativeViewHolder(
       key: widget.controller.rendererKey,
       controller: widget.controller,
-      child: MouseRegion(
-        onEnter: (_) {
-          if (widget.controller.hitTestBehavior ==
-              HitTestBehavior.translucent) {
-            FFI.nativeViewCoreSetHitTestBehavior(1);
-            setState(() {
-              widget.controller.entered = true;
-            });
-          }
-        },
-        onExit: (_) {
-          if (widget.controller.hitTestBehavior ==
-              HitTestBehavior.translucent) {
-            setState(() {
-              widget.controller.entered = false;
-            });
-          }
-        },
-        child: CustomPaint(
+      child: CustomPaint(
           key: widget.controller.painterKey,
           painter: const _NativeViewPainter(),
           size: Size(
             widget.width,
             widget.height,
           ),
-        ),
       ),
     );
   }

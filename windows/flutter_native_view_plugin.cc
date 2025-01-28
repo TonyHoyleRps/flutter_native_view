@@ -62,6 +62,10 @@ HWND FlutterNativeViewPlugin::GetWindow() {
 
 FlutterNativeViewPlugin::~FlutterNativeViewPlugin() {}
 
+LRESULT SubclassProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, UINT_PTR uIdSubclass, DWORD_PTR dwRefData) {
+    return ((flutternativeview::NativeViewCore*)dwRefData)->WindowProc2(hWnd, uMsg, wParam, lParam);
+}
+  
 void FlutterNativeViewPlugin::HandleMethodCall(
     const flutter::MethodCall<flutter::EncodableValue>& method_call,
     std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>> result) {
@@ -81,6 +85,9 @@ void FlutterNativeViewPlugin::HandleMethodCall(
                   ->WindowProc(hwnd, message, wparam, lparam);
             }));
   }
+  
+  ::SetWindowSubclass(GetChildWindow(), SubclassProc, *flutternativeview::NativeViewCore::GetProcId(), (DWORD_PTR)flutternativeview::NativeViewCore::GetInstance());
+
   result->Success(flutter::EncodableValue(nullptr));
 }
 

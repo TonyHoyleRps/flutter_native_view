@@ -56,17 +56,6 @@ void NativeViewCore::DisposeNativeView(HWND native_view) {
   native_views_.erase(native_view);
 }
 
-void NativeViewCore::SetHitTestBehavior(int32_t hittest_behavior) {
-  hittest_behavior;
-  LONG ex_style = ::GetWindowLong(window_, GWL_EXSTYLE);
-  if (hittest_behavior) {
-    ex_style |= (WS_EX_TRANSPARENT | WS_EX_LAYERED);
-  } else {
-    ex_style &= ~(WS_EX_TRANSPARENT | WS_EX_LAYERED);
-  }
-  ::SetWindowLong(window_, GWL_EXSTYLE, ex_style);
-}
-
 void NativeViewCore::ResizeNativeView(HWND native_view, RECT rect) {
   // TODO: Examine behavior in future.
   // if (native_views_[native_view].left == rect.left &&
@@ -88,7 +77,7 @@ void NativeViewCore::ResizeNativeView(HWND native_view, RECT rect) {
 std::optional<HRESULT> NativeViewCore::WindowProc(HWND hwnd, UINT message,
                                                   WPARAM wparam,
                                                   LPARAM lparam) {
-  switch (message) {
+  switch (message) {   
     case WM_ACTIVATE: {
       RECT window_rect;
       ::GetWindowRect(window_, &window_rect);
@@ -99,75 +88,16 @@ std::optional<HRESULT> NativeViewCore::WindowProc(HWND hwnd, UINT message,
                      window_rect.bottom - window_rect.top, SWP_NOACTIVATE);
       break;
     }
-    case WM_SIZE: {
-      // Handle Windows's minimize & maximize animations properly.
-      // Since |SetWindowPos| & other Win32 APIs on |native_view_container_|
-      // do not re-produce the same DWM animations like  actual user
-      // interractions on the |window_| do (though both windows are overlapped
-      // tightly but maximize and minimze animations can't be mimiced for the
-      // both of them at the same time), the best solution is to make the
-      // |window_| opaque & hide |native_view_container_| & alter it's position.
-      // After that, finally make |native_view_container_| visible again &
-      // |window_| transparent again. This approach is not perfect, but it's the
-      // best we can do. The minimize & maximize animations on the |window_|
-      // look good with just a slight glitch on the visible native views. In
-      // future, maybe replacing the |NativeView| widget (Flutter-side) with
-      // equivalent window screenshot will result in a totally seamless
-      // experience.
-      if (wparam != SIZE_RESTORED || last_wm_size_wparam_ == SIZE_MINIMIZED ||
-          last_wm_size_wparam_ == SIZE_MAXIMIZED ||
-          was_window_hidden_due_to_minimize_) {
-        was_window_hidden_due_to_minimize_ = false;
-        // Minimize condition is handled separately inside |WM_WINDOWPOSCHANGED|
-        // case, since we don't want to cause unnecessary redraws (& show/hide)
-        // when user is resizing the window by dragging the window border.
-        SetWindowComposition(window_, 0, 0);
-        ::ShowWindow(native_view_container_, SW_HIDE);
-        last_thread_time_ =
-            std::chrono::duration_cast<std::chrono::milliseconds>(
-                std::chrono::system_clock::now().time_since_epoch())
-                .count();
-        std::thread(
-            [=](uint64_t time) {
-              if (time < last_thread_time_) {
-                return;
-              }
-              std::this_thread::sleep_for(
-                  std::chrono::milliseconds(kNativeViewPositionAndShowDelay));
-              SetWindowComposition(window_, 6, 0);
-              // Handling SIZE_MINIMIZED separately.
-              if (wparam != SIZE_MINIMIZED) {
-                ::ShowWindow(native_view_container_, SW_SHOWNOACTIVATE);
-              }
-            },
-            last_thread_time_)
-            .detach();
-      }
-      last_wm_size_wparam_ = wparam;
-      break;
-    }
+
     // Keep |native_view_container_| behind the |window_|.
     case WM_MOVE:
     case WM_MOVING:
     case WM_WINDOWPOSCHANGED: {
       RECT window_rect;
       ::GetWindowRect(window_, &window_rect);
-      if (window_rect.right - window_rect.left > 0 &&
-          window_rect.bottom - window_rect.top > 0) {
-        ::SetWindowPos(native_view_container_, window_, window_rect.left,
-                       window_rect.top, window_rect.right - window_rect.left,
-                       window_rect.bottom - window_rect.top, SWP_NOACTIVATE);
-        // |window_| is minimized.
-        if (window_rect.left < 0 && window_rect.top < 0 &&
-            window_rect.right < 0 && window_rect.bottom < 0) {
-          // Hide |native_view_container_| to prevent showing
-          // |native_view_container_| before |window_| placement
-          // i.e when restoring window after clicking the taskbar icon.
-          SetWindowComposition(window_, 0, 0);
-          ::ShowWindow(native_view_container_, SW_HIDE);
-          was_window_hidden_due_to_minimize_ = true;
-        }
-      }
+      ::SetWindowPos(native_view_container_, window_, window_rect.left,
+                     window_rect.top, window_rect.right - window_rect.left,
+                     window_rect.bottom - window_rect.top, SWP_NOACTIVATE);
       break;
     }
     case WM_CLOSE: {
@@ -178,12 +108,38 @@ std::optional<HRESULT> NativeViewCore::WindowProc(HWND hwnd, UINT message,
       native_views_.clear();
       break;
     }
+          
     default:
       break;
   }
   return std::nullopt;
 }
 
+LRESULT NativeViewCore::WindowProc2(HWND hwnd, UINT message,
+                                                  WPARAM wparam,
+                                                  LPARAM lparam) {
+  switch (message) {   
+    case WM_LBUTTONDOWN:
+    case WM_LBUTTONUP:
+    case WM_RBUTTONDOWN:
+    case WM_RBUTTONUP:
+    case WM_MOUSEMOVE: {
+      POINT mouse_point {LOWORD(lparam),HIWORD(lparam)};
+      for (const auto& [native_view, rect] : native_views_) {
+        if(PtInRect(&native_views_[native_view], mouse_point)) {
+          ::SendMessage(native_view, message, wparam, lparam);
+        }
+      }
+      break;
+    }
+      
+    default:
+      break;
+  }
+
+  return DefSubclassProc(hwnd, message, wparam, lparam);
+}
+ 
 void NativeViewCore::RedrawNativeViews() {
   ::RedrawWindow(native_view_container_, 0, 0,
                  RDW_INVALIDATE | RDW_ALLCHILDREN);

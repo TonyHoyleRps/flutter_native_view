@@ -29,10 +29,6 @@ void NativeViewCoreDisposeNativeView(uint32_t native_view) {
   flutternativeview::NativeViewCore::GetInstance()->DisposeNativeView(
       reinterpret_cast<HWND>(native_view));
 }
-void NativeViewCoreSetHitTestBehavior(uint32_t hittest_behavior) {
-  flutternativeview::NativeViewCore::GetInstance()->SetHitTestBehavior(
-      hittest_behavior);
-}
 
 void NativeViewCoreResizeNativeView(uint32_t native_view, uint32_t left,
                                     uint32_t top, uint32_t right,

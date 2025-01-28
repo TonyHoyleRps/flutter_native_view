@@ -49,12 +49,10 @@ class NativeViewController {
       StreamController<void>();
   late final StreamSubscription<void> resizeNativeViewStreamSubscription;
 
-  HitTestBehavior hitTestBehavior;
   bool entered = false;
 
   NativeViewController({
-    required this.handle,
-    this.hitTestBehavior = HitTestBehavior.opaque,
+    required this.handle
   }) {
     resizeNativeViewStreamSubscription =
         resizeNativeViewStreamController.stream.listen(
@@ -80,14 +78,6 @@ class NativeViewController {
       (painterKey.rect!.bottom * window.devicePixelRatio).toInt(),
       window.devicePixelRatio,
     );
-  }
-
-  /// Creates a new [NativeView].
-  ///
-  /// NOTE: [HitTestBehavior.deferToChild] does not work.
-  ///
-  void setHitTestBehavior(HitTestBehavior value) {
-    hitTestBehavior = value;
   }
 
   /// Causes [NativeView] associated with this [NativeViewController] to redraw & update its positioning.
