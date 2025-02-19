@@ -118,7 +118,8 @@ std::optional<HRESULT> NativeViewCore::WindowProc(HWND hwnd, UINT message,
 LRESULT NativeViewCore::WindowProc2(HWND hwnd, UINT message,
                                                   WPARAM wparam,
                                                   LPARAM lparam) {
-  switch (message) {   
+  switch (message) {  
+    case WM_MOUSEWHEEL:
     case WM_LBUTTONDOWN:
     case WM_LBUTTONUP:
     case WM_RBUTTONDOWN:
