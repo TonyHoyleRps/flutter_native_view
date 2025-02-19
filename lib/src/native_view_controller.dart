@@ -84,7 +84,7 @@ class NativeViewController {
   ///
   /// TODO: Fix [force] argument.
   ///
-  void refresh({bool force = true}) {
+  void refresh({bool force = false}) {
     FFI.nativeViewCoreResizeNativeView(
       handle,
       (painterKey.rect!.left * window.devicePixelRatio).toInt(),
@@ -92,6 +92,8 @@ class NativeViewController {
       (painterKey.rect!.right * window.devicePixelRatio).toInt(),
       (painterKey.rect!.bottom * window.devicePixelRatio).toInt(),
     );
-    rendererKey.currentState!.setState(() {});
+    if(force) {
+      rendererKey.currentState!.setState(() {});
+    }
   }
 }
