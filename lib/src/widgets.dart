@@ -56,13 +56,11 @@ import 'package:flutter_native_view/src/native_view_controller.dart';
 /// ```
 class NativeView extends StatefulWidget {
   final NativeViewController controller;
-  final double width;
-  final double height;
+  final Size size;
   const NativeView({
     Key? key,
     required this.controller,
-    required this.width,
-    required this.height,
+    this.size = Size.infinite
   }) : super(key: key);
 
   @override
@@ -74,7 +72,7 @@ class _NativeViewState extends State<NativeView>
   @override
   void initState() {
     super.initState();
-    _ambiguate(WidgetsBinding.instance)!.addPostFrameCallback(
+    WidgetsBinding.instance?.addPostFrameCallback(
       (_) {
         widget.controller.createNativeView();
       },
@@ -84,17 +82,10 @@ class _NativeViewState extends State<NativeView>
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    return _NativeViewHolder(
-      key: widget.controller.rendererKey,
-      controller: widget.controller,
-      child: CustomPaint(
+    return CustomPaint(
           key: widget.controller.painterKey,
-          painter: const _NativeViewPainter(),
-          size: Size(
-            widget.width,
-            widget.height,
-          ),
-      ),
+          painter: _NativeViewPainter(widget.controller),
+          size: widget.size,
     );
   }
 
@@ -102,32 +93,14 @@ class _NativeViewState extends State<NativeView>
   bool get wantKeepAlive => true;
 }
 
-class _NativeViewHolder extends StatefulWidget {
-  final NativeViewController controller;
-  final Widget child;
-  const _NativeViewHolder({
-    Key? key,
-    required this.controller,
-    required this.child,
-  }) : super(key: key);
-
-  @override
-  State<_NativeViewHolder> createState() => _NativeViewHolderState();
-}
-
-class _NativeViewHolderState extends State<_NativeViewHolder> {
-  @override
-  Widget build(BuildContext context) {
-    widget.controller.resizeNativeViewStreamController.add(null);
-    return widget.child;
-  }
-}
-
 class _NativeViewPainter extends CustomPainter {
-  const _NativeViewPainter();
+  final NativeViewController controller;
+
+  const _NativeViewPainter(this.controller);
 
   @override
   void paint(Canvas canvas, Size size) {
+    controller.resizeNativeViewStreamController.add(null);
     canvas.drawRect(
       Rect.fromLTWH(0, 0, size.width, size.height),
       Paint()
@@ -152,5 +125,3 @@ extension GlobalKeyExtension on GlobalKey {
     }
   }
 }
-
-T? _ambiguate<T>(T? value) => value;

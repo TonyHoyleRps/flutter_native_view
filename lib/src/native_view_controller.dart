@@ -41,7 +41,6 @@ import 'package:flutter_native_view/src/widgets.dart';
 ///
 class NativeViewController {
   final int handle;
-  final GlobalKey rendererKey = GlobalKey();
   final GlobalKey painterKey = GlobalKey();
 
   /// [StreamController] to avoid race & send [Rect]s synchronously.
@@ -49,15 +48,13 @@ class NativeViewController {
       StreamController<void>();
   late final StreamSubscription<void> resizeNativeViewStreamSubscription;
 
-  bool entered = false;
-
   NativeViewController({
     required this.handle
   }) {
     resizeNativeViewStreamSubscription =
         resizeNativeViewStreamController.stream.listen(
       (event) {
-        refresh();
+        resize();
       },
     );
   }
@@ -80,11 +77,9 @@ class NativeViewController {
     );
   }
 
-  /// Causes [NativeView] associated with this [NativeViewController] to redraw & update its positioning.
+  /// Causes [NativeView] associated with this [NativeViewController] to update its positioning.
   ///
-  /// TODO: Fix [force] argument.
-  ///
-  void refresh({bool force = false}) {
+  void resize() {
     FFI.nativeViewCoreResizeNativeView(
       handle,
       (painterKey.rect!.left * window.devicePixelRatio).toInt(),
@@ -92,8 +87,5 @@ class NativeViewController {
       (painterKey.rect!.right * window.devicePixelRatio).toInt(),
       (painterKey.rect!.bottom * window.devicePixelRatio).toInt(),
     );
-    if(force) {
-      rendererKey.currentState!.setState(() {});
-    }
   }
 }
